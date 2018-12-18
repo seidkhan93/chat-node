@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Hello</title>
+	<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="/socket.io.js"></script>
+</head>
+<body>
+	<div id="root">
+		<v-list v-for="item in messages" :item="item.message"></v-list>
+
+		<input @keyup.enter="sendMessage" v-model="message" type="text" placeholder="Type something...">
+
+		<button @click="sendMessage" type="button">Send</button>
+	</div>
+
+	<script type="text/javascript">
+		const socket = io();
+
+		Vue.component('v-list', {
+			props: ['item'],
+			template: `
+				<li>
+					{{ item }}
+				</li>
+			`
+		});
+
+		new Vue({
+			el: "#root",
+			data: {
+				message: '',
+				messages: []
+			},
+			beforeMount() {
+				$.ajax({
+					method: "GET",
+				  url: "/message"
+				})
+					.done((data) => {
+						this.messages = data;
+					});
+			},
+			mounted() {
+				socket.on('user', (data) => {
+					this.messages = data.messages;
+				});
+
+				socket.on('broadcast', (data) => {
+					this.messages = data.messages;
+				});
+			},
+			methods: {
+				sendMessage() {
+					socket.emit('message', { message: this.message });
+					this.message = '';
+				}
+			}
+		})
+	</script>
+</body>
+</html>
